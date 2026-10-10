@@ -34,9 +34,11 @@ export interface Statement {
 export interface ReceiptItem {
   text: string;
   evidenceRefs: string[];
+  tone?: Statement["tone"];
 }
 export interface Retrospective {
-  mode: "sample" | "template";
+  mode: "sample" | "template" | "llm";
+  provenance?: { model: string; endpoint: string; requests: number; generatedAt: string; usage: { prompt_tokens: number; completion_tokens: number; total_tokens: number } | null };
   period: Period;
   projects: string[];
   conversation: Statement[];
@@ -51,7 +53,8 @@ export interface RetrospectiveProvider {
     events: readonly HistoryEvent[],
     period: Period,
     source: "sample" | "import",
-  ): Retrospective;
+    signal?: AbortSignal,
+  ): Promise<Retrospective>;
 }
 const scripts: Record<string, string> = {
   "k-config-1":
@@ -79,11 +82,13 @@ function exactSample(event: HistoryEvent): boolean {
   );
 }
 export class DemoProvider implements RetrospectiveProvider {
-  generate(
+  async generate(
     events: readonly HistoryEvent[],
     period: Period,
     source: "sample" | "import",
-  ): Retrospective {
+    signal?: AbortSignal,
+  ): Promise<Retrospective> {
+    signal?.throwIfAborted();
     const mode =
       source === "sample" && events.every(exactSample) ? "sample" : "template";
     const result: Retrospective = {
@@ -208,8 +213,8 @@ export function toMarkdown(
   const lines = [
     "# Agent Izakaya — お会計",
     "",
-    "サンプル会話・実AI未接続（決定論的DemoProvider）",
-    result.mode === "sample"
+    result.mode === "llm" ? "LLM生成（意味内容は未検証）" : "サンプル会話・実AI未接続（決定論的DemoProvider）",
+    result.mode === "llm" ? "根拠IDの有効性は意味内容の真実性を保証しません。仮説・提案は未検証、口調・冗談は演出です。" : result.mode === "sample"
       ? "完全架空のfixtureによるサンプル脚本。口調・冗談は演出でありAIの内心ではありません。"
       : "任意入力の引用テンプレート。LLMの推論・原因分析は実行していません。",
     "",
@@ -218,6 +223,10 @@ export function toMarkdown(
     `プロジェクト: ${result.projects.map(markdownText).join(", ") || "なし"}`,
     "",
   ];
+  if (result.provenance) {
+    const p = result.provenance;
+    lines.push(`Model: ${markdownText(p.model)}`, `送信先: ${markdownText(p.endpoint)}`, `生成日時: ${p.generatedAt}`, `リクエスト数: ${p.requests}`, `Usage: ${p.usage ? JSON.stringify(p.usage) : "未提供（推定なし）"}`, "");
+  }
   const sections = [
     ["持ち帰る知見", result.receipt.insights],
     ["明日の一手（提案）", result.receipt.actions],
@@ -229,7 +238,7 @@ export function toMarkdown(
       ...(items.length
         ? items.map(
             (i) =>
-              `- ${markdownText(i.text)} — 根拠: ${i.evidenceRefs.join(", ")}`,
+              `- ${i.tone ? `[${i.tone}] ` : ""}${markdownText(i.text)} — 根拠: ${i.evidenceRefs.join(", ")}`,
           )
         : ["対象なし"]),
     );

@@ -1094,3 +1094,6 @@ textarea {
     overflow: visible;
   }
 }
+
+#destination, #mode-note { overflow-wrap: anywhere; }
+#cancel-generation { margin-top: 12px; }
