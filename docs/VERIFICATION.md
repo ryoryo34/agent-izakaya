@@ -34,3 +34,35 @@ Browser tests cover selection, timed replay, pause/resume, show-all, evidence di
 - Chrome was exercised; other browser engines and physical mobile devices were not tested.
 - Tests ran on Node 25.4.0; the documented minimum is Node 22.18 for native TypeScript stripping.
 - Imports remain in browser memory. They are not persisted, executed, or transmitted.
+
+# Issue #3 verification / 検証記録
+
+Scope: [Issue #3](https://github.com/ryoryo34/agent-izakaya/issues/3), stacked on [PR #2](https://github.com/ryoryo34/agent-izakaya/pull/2), parent commit `531ddf062456425ebb7e0bf4055b7c1ed501e193`. Verified 2026-10-10, same Node/Chrome environment as above. All history, model responses and test keys are fictional. No real histories, secrets, paid APIs, deployment or account-setting changes were used.
+
+| Check | Result |
+| --- | --- |
+| `npm test` | 21 passed: 15 existing domain + 6 LLM/integration tests |
+| `npm run typecheck` | Passed, including server and tests |
+| `PLAYWRIGHT_CHROME=1 npm run test:e2e` | 8 passed: 5 existing + 3 LLM browser tests |
+| `npm run build` | Passed with a fictional secret sentinel in server environment; absent from build assets |
+| `PLAYWRIGHT_CHROME=1 npm run test:preview` | Passed: production HTTP flow, evidence/download, actual browser disconnect reaching upstream, prior-result retention and zero JS errors |
+| Desktop + 390px mobile LLM screenshots | Inspected; no horizontal overflow |
+| Browser JavaScript errors | None during LLM flow |
+| API key disclosure | Fictional key present only in stub Authorization; absent from client scripts, DOM, config/result JSON and Markdown |
+| External model calls / charges | None; all model requests use local HTTP stub |
+
+Real socket integration exercises researcher → host → validated conversation/receipt; all three researchers receive only their own selected records, host receives only selected evidence and research, excluded dates/projects stay out, at most four requests occur, empty selection makes zero calls. It verifies input/project caps, forbidden/missing/null Origin and Host, single concurrent generation, malformed envelope/model JSON, missing evidence, excessive response bytes/text, HTTP error body suppression, refused redirects, unfinished output, tool calls, timeout, slow response-body timeout, final host validation failure after exactly four calls, and cancellation propagation to upstream sockets with no later calls or retries. Missing usage is unknown; no estimates are displayed.
+
+Runtime contract tests additionally mutate speakers, roles, tones, references, empty evidence, statement/receipt counts and receipt structure. Evidence validation checks membership, **not semantic truth**. Stage speech must be theatrical by prompt; it is not a semantic classifier. Prompts keep history as untrusted data and expose no tools, but are not a proof of immunity to instruction injection.
+
+Browser success goes through Vite → Node API → local HTTP stub. Browser failure/cancel UI tests use mocked responses to check previous-result preservation; cancellation over real sockets is covered separately in integration tests. Tests use their own port 4314, reject an occupied port and do not reuse or stop other servers. Vite reports its existing warning about the sample JSON import from `public/`; all regression checks pass.
+
+Implementation uses built-in Node HTTP/fetch without adding dependencies. On 2026-10-10, the [Chat Completions reference](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create) was checked for JSON mode, `max_completion_tokens`, finish reasons and usage. [openai-node](https://github.com/openai/openai-node) is Apache-2.0 and [AIRI](https://github.com/moeru-ai/airi) is MIT; neither code/assets nor dependencies were copied. Local runtime validation follows JSON mode because compatible services vary in JSON Schema support. No automatic parameter fallback or retries are attempted.
+
+## Issue #3 limits / 未確認事項
+
+- Real providers/models, response quality, actual token usage, monetary billing and upstream cancellation behavior are **not verified**. Stub usage numbers are fictional. The UI/receipt's model is the configured/requested model, not a verified server identity.
+- Service support for JSON mode, system messages and `max_completion_tokens` is required; incompatible models fail visibly. Request caps are not a monetary budget, and timeout/cancel cannot undo accepted upstream work or charges.
+- Chrome desktop/mobile viewport only; other browser engines, physical devices and Node 22.18 minimum were not exercised.
+- Node backend exists in both Vite dev and preview. Static hosting of `dist/` alone cannot perform LLM generation. No deployment was done.
+- Demo remains deterministic and keyless. Existing Issue #1 limits above describe that earlier milestone; Issue #3 now adds the optional HTTP path and explicit selected-history transmission.

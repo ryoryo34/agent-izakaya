@@ -10,7 +10,7 @@ A local-first izakaya retrospective where project agents share stories grounded 
 
 The first runnable demo is available. **Sample conversation · no real AI connected.** A deterministic `DemoProvider` stages a conversation between three fictional project agents and the host. Character voices and jokes are theatrical, not an AI's inner thoughts.
 
-Real LLM inference, Codex/Claude history adapters, user participation, and long-term memory are future work. No API key, external log connection, or runtime network service is required.
+An optional **LLM mode** now runs project research followed by a host conversation and receipt through a loopback Node backend. The OpenAI-compatible HTTP path is tested with a local stub; **real models and billing have not been exercised**. Demo still needs no API key or external service. Codex/Claude history adapters, user participation, and long-term memory remain future work.
 
 ## Run locally
 
@@ -28,7 +28,7 @@ npm run build
 npm run preview
 ```
 
-The preview serves the production build on the same port, so stop the dev server first. Package installation requires network access; the running app works locally without external requests, storage, analytics, fonts, or APIs. A page reload clears imported data and the current conversation.
+The preview serves the production build on the same port, so stop the dev server first. Package installation requires network access. Demo runs without external requests, storage, analytics, fonts, or APIs; LLM mode sends selected records only when you explicitly generate. A page reload clears imported data and the current conversation.
 
 ## Try one evening
 
@@ -49,7 +49,7 @@ All periods are **start-inclusive, end-exclusive** in **Asia/Tokyo (UTC+09:00)**
 
 ## Normalized JSON input
 
-Use **JSONを選ぶ** to select a local JSON file or paste JSON. It is processed only in browser memory. Use fictional records when experimenting with this public demo.
+Use **JSONを選ぶ** to select a local JSON file or paste JSON. Import and selection happen in browser memory. In LLM mode, explicit generation transmits the selected events to the displayed endpoint through the backend. Use fictional records when experimenting with this public demo.
 
 ```json
 {
@@ -75,7 +75,46 @@ Use **JSONを選ぶ** to select a local JSON file or paste JSON. It is processed
 
 `src/domain.ts` defines and validates the schema. Conversation statements and receipt items use `evidenceRefs: string[]`, resolving only to the selected events. Missing references fail validation and export. Imported text is displayed as text; Markdown metacharacters are escaped in receipts.
 
-**Imported input always uses short quotation templates, never sample-specific facts or LLM inference**, even if it reuses sample IDs or the entire sample file. Built-in scripts require exact fixture content and all evidence for each statement. Cross-project suggestions disappear when a required event is filtered out. Hypotheses and suggestions are explicitly labeled; they are not reported as proven causes or completed fixes.
+**In Demo mode, imported input always uses short quotation templates, never sample-specific facts or LLM inference**, even if it reuses sample IDs or the entire sample file. Built-in scripts require exact fixture content and all evidence for each statement. Cross-project suggestions disappear when a required event is filtered out. Hypotheses and suggestions are explicitly labeled; they are not reported as proven causes or completed fixes.
+
+## Optional LLM mode
+
+Configure only the server process, then restart `npm run dev` (or `npm run preview` after building):
+
+```sh
+export IZAKAYA_LLM_BASE_URL="https://api.openai.com/v1"
+export IZAKAYA_LLM_MODEL="your-compatible-model"
+# Supply IZAKAYA_LLM_API_KEY through your shell's secret mechanism.
+# Never use a VITE_ variable, browser input, source file, or committed key.
+npm run dev
+```
+
+`IZAKAYA_LLM_BASE_URL` is a base URL; the backend appends `/chat/completions`. Remote endpoints require HTTPS; HTTP is allowed only for localhost/loopback services. URL credentials, query strings and fragments are rejected. Model and base URL are required; `IZAKAYA_LLM_API_KEY` is optional for keyless local services. Configuration comes from the process environment, **not automatically from `.env`**. Missing/invalid configuration disables LLM generation while Demo remains usable. The browser receives only endpoint/model/limits; there is no editable endpoint or key field.
+
+Choose **LLM**, review the displayed destination/model, selected projects and Tokyo period, then click **選択記録を送信してLLM生成**. Importing a file or switching mode does not send histories. Each agent receives only its selected project events; the host receives those bounded research notes and all selected evidence. Result/receipt labels distinguish `fact`, `hypothesis`, `suggestion`, and theatrical `stage` speech. A valid evidence ID proves only that the record is in scope, **not that a model's claim is true**. Inspect the original text before acting on suggestions. No tools are exposed and history instructions are treated as data; prompts cannot guarantee semantic immunity to injection.
+
+| Bound per explicit generation | Limit |
+| --- | --- |
+| Selected projects / events / serialized event input | 3 / 60 / 48 KiB UTF-8 |
+| Upstream calls | One per nonempty project, then one host call; **maximum 4**, sequential; empty input = 0 |
+| Retries / redirects / concurrent jobs | None / rejected / one per app server |
+| Requested output token caps | 1,200 per researcher + 2,400 host = maximum 6,000; `max_completion_tokens` |
+| Timeout / upstream response size | 20 seconds per call including body (up to 80 seconds total); 64 KiB each; upload timeout 10 seconds |
+| Structured result | 2–16 statements; 1–500 UTF-16 units per text; ≤6 items per receipt section; ≤8 evidence IDs per item |
+
+The model must support Chat Completions with `response_format: {type: "json_object"}`, `max_completion_tokens`, and system messages. JSON mode alone does not ensure schema compliance: runtime checks reject malformed JSON, invalid speakers/tones/references, missing evidence on non-stage items, oversized results, refusals, tool calls and incomplete responses. There is no silent Demo fallback or automatic retry. An unsupported provider/model fails visibly; compatibility has **not** been verified against real services.
+
+Usage is the sum of provider-reported prompt/completion/total tokens only when all calls report valid usage; otherwise it is **unavailable**, not an estimate. Markdown retains LLM mode, requested model, endpoint, timestamp, call count and usage. Input is sent once for research and again with research notes to the host; 48 KiB is the selected-event limit, not cumulative transfer or a token budget. These are request limits, **not a monetary cap**; service pricing and enforcement vary. Cancellation/timeout abort the connection and stop later calls but cannot guarantee a remote provider stops processing or charging an already accepted request. A new manual generation can incur a new set of calls.
+
+Generation states are visible. Failure/cancellation keep the prior completed conversation and receipt; successful generation replaces them. Changing source/projects/period clears the old scope. Selection is locked during generation, with a cancel button available. The backend rejects unapproved Host/Origin and cross-site API requests, requires same-origin JSON POST, never returns provider error bodies, and does not log or persist keys/histories/results. Provider-side retention depends on the configured service.
+
+### Try the HTTP path without an API key or charges
+
+```sh
+node tests/browser-server.ts
+```
+
+Open <http://127.0.0.1:4314/>, choose LLM, and generate. This starts Vite plus a fictional local HTTP stub, temporarily replacing LLM configuration **only in this process**. The generated content is fixed test output, not real inference. Ctrl-C stops both servers. `npm test` also exercises real loopback HTTP with ephemeral ports; no internet/model account is needed. `PLAYWRIGHT_CHROME=1 npm run test:e2e` covers browser → backend → stub, evidence and receipt; error/cancel UI tests use browser response mocks, while backend timeout/cancellation tests use real sockets.
 
 ## Development and verification
 
@@ -87,15 +126,16 @@ npm run typecheck
 npm run build
 npx playwright install chromium
 npm run test:e2e
+npm run test:preview # after npm run build
 ```
 
-For an already installed Google Chrome: `PLAYWRIGHT_CHROME=1 npm run test:e2e`. Browser tests can reuse the running dev server; otherwise they start it. The production build is in `dist/`.
+For an already installed Google Chrome: `PLAYWRIGHT_CHROME=1 npm run test:e2e`. Browser tests start an isolated Vite server on port **4314** with a local HTTP stub on an ephemeral loopback port. They fail if 4314 is occupied and never reuse another server. The production build is in `dist/`.
 
 Tests cover Tokyo midnight/Monday/year boundaries, offset equivalence, exclusive endpoints, every project subset, empty/malformed/oversized input, unknown-history isolation, missing evidence, safe DOM/Markdown rendering, replay controls, receipt downloads, stale-state reset, and mobile overflow. See [verification notes](docs/VERIFICATION.md) for the implementation-session results.
 
-Architecture: `domain.ts` handles input and time selection; `provider.ts` exposes `RetrospectiveProvider`, deterministic generation, reference validation, and Markdown output; `main.ts` handles ephemeral UI state. Tokyo is the sole reference timezone. This demo does not infer whether later events resolved earlier problems. The imported-history UI can quote up to the input limits; it does not summarize or analyze them.
+Architecture: `domain.ts` handles input/time selection; `provider.ts` exposes asynchronous, cancellable `RetrospectiveProvider`, Demo generation and Markdown output; `llm-contract.ts` validates bounded results; `llm-provider.ts` calls the same-origin API; `server/llm.ts` handles research/host prompts and upstream HTTP; `server/api.ts` handles loopback request security and cancellation; `main.ts` manages ephemeral UI state. Vite attaches the Node API in both dev and preview; serving `dist/` alone provides Demo only. Tokyo is the sole reference timezone. This demo does not infer whether later events resolved earlier problems. Demo quotes imported histories; only LLM mode attempts analysis, whose meaning must be checked against the original evidence.
 
-See [vision](docs/VISION.md), [workflow](docs/WORKFLOW.md), and [issues](https://github.com/ryoryo34/agent-izakaya/issues). One issue corresponds to one Codex session and one implementation branch. Deployment, real LLM integration, and CLI history adapters are outside Issue #1.
+See [vision](docs/VISION.md), [workflow](docs/WORKFLOW.md), and [issues](https://github.com/ryoryo34/agent-izakaya/issues). One issue corresponds to one Codex session and one implementation branch. Issue #3 adds the optional LLM path on top of Issue #1. Deployment and CLI history adapters remain out of scope.
 
 ## License
 
