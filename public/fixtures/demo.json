@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "events": [
+    {
+      "projectId": "komorebi",
+      "sessionId": "k-1004",
+      "eventId": "k-before",
+      "timestamp": "2026-10-04T23:59:59+09:00",
+      "kind": "achievement",
+      "text": "先週の画面ラフを保存した。"
+    },
+    {
+      "projectId": "komorebi",
+      "sessionId": "k-1005",
+      "eventId": "k-config-1",
+      "timestamp": "2026-10-05T00:00:00+09:00",
+      "kind": "problem",
+      "text": "設定の読み込みが2回走り、初期化ログが重複した。"
+    },
+    {
+      "projectId": "minato",
+      "sessionId": "m-1006",
+      "eventId": "m-improve",
+      "timestamp": "2026-10-06T14:30:00+09:00",
+      "kind": "improvement",
+      "text": "設定取得を一つの関数に集約し、重複呼び出しを防ぐテストを追加した。"
+    },
+    {
+      "projectId": "tsubame",
+      "sessionId": "t-1007",
+      "eventId": "t-done",
+      "timestamp": "2026-10-07T11:00:00+09:00",
+      "kind": "achievement",
+      "text": "検索画面のキーボード操作を実装し、操作テストが通った。"
+    },
+    {
+      "projectId": "komorebi",
+      "sessionId": "k-1009",
+      "eventId": "k-config-2",
+      "timestamp": "2026-10-09T17:00:00+09:00",
+      "kind": "problem",
+      "text": "別画面でも設定読み込みの重複を確認。呼び出し元はまだ調査中。"
+    },
+    {
+      "projectId": "tsubame",
+      "sessionId": "t-1010",
+      "eventId": "t-open",
+      "timestamp": "2026-10-10T10:00:00+09:00",
+      "kind": "unresolved",
+      "text": "検索条件を素早く切り替えるテストが不安定。原因は未特定。"
+    },
+    {
+      "projectId": "komorebi",
+      "sessionId": "k-1010",
+      "eventId": "k-done",
+      "timestamp": "2026-10-10T16:00:00+09:00",
+      "kind": "achievement",
+      "text": "設定呼び出しの計測ログを追加し、再現手順をメモした。"
+    },
+    {
+      "projectId": "minato",
+      "sessionId": "m-1011",
+      "eventId": "m-last",
+      "timestamp": "2026-10-11T23:59:59+09:00",
+      "kind": "achievement",
+      "text": "集約した設定取得の回帰テストが通った。"
+    },
+    {
+      "projectId": "tsubame",
+      "sessionId": "t-1012",
+      "eventId": "t-after",
+      "timestamp": "2026-10-12T00:00:00+09:00",
+      "kind": "achievement",
+      "text": "来週の検証用ブランチを用意した。"
+    }
+  ]
+}
