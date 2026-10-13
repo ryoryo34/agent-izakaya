@@ -1,3 +1,7 @@
+async function openSettings(page: import("@playwright/test").Page) {
+  if (!(await page.locator("#settings").evaluate(e => (e as HTMLDetailsElement).open)))
+    await page.locator("#settings summary").click();
+}
 import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 
@@ -10,7 +14,9 @@ test('real loopback HTTP stub: explicit send, selected scope, evidence, receipt,
   page.on('request', r => { if (r.url().endsWith('/api/generate')) sent.push(r.postData()!); });
   await page.goto('/');
   await expect(page.locator('#destination')).toContainText('fictional-stub');
+  await openSettings(page);
   await page.locator('#generation-mode').selectOption('llm');
+  await openSettings(page);
   await page.locator('input[value="tsubame"]').uncheck();
   expect(sent).toHaveLength(0);
   await page.locator('#start-session').click();
@@ -44,6 +50,7 @@ test('failure and cancellation preserve a completed result; later generation rep
   await page.locator('#show-all').click();
   const oldMessages = await page.locator('#messages').innerHTML();
   const oldReceipt = await page.locator('#receipt-body').innerHTML();
+  await openSettings(page);
   await page.locator('#generation-mode').selectOption('llm');
   await page.route('**/api/generate', route => route.fulfill({ status: 502, contentType: 'application/json', body: JSON.stringify({ error: 'テスト用のAPIエラー' }) }));
   await page.locator('#start-session').click();
@@ -73,14 +80,17 @@ test('four selected projects are blocked before transmission; demo remains avail
   await expect(page.locator('#destination')).toContainText('fictional-stub');
   let calls = 0;
   page.on('request', r => { if (r.url().endsWith('/api/generate')) calls++; });
+  await openSettings(page);
   await page.locator('#import-toggle').click();
   const events = ['a', 'b', 'c', 'd'].map(projectId => ({ projectId, eventId: projectId, sessionId: 's', timestamp: '2026-10-06T00:00:00+09:00', kind: 'achievement', text: '架空の記録' }));
   await page.locator('#json-input').fill(JSON.stringify({ schemaVersion: 1, events }));
   await page.locator('#load-json').click();
+  await openSettings(page);
   await page.locator('#generation-mode').selectOption('llm');
   await expect(page.locator('#error')).toContainText('最大3プロジェクト');
   await expect(page.locator('#start-session')).toBeDisabled();
   expect(calls).toBe(0);
+  await openSettings(page);
   await page.locator('#generation-mode').selectOption('demo');
   await page.locator('#start-session').click();
   await page.locator('#show-all').click();

@@ -32,11 +32,15 @@ The preview serves the production build on the same port, so stop the dev server
 
 ## Try one evening
 
-1. Keep **架空サンプル** (fictional sample) and the fixed **デモの一週間** (demo week), select the projects, and click **暖簾をくぐる** (enter).
-2. Watch a statement appear every 2.4 seconds. Use **一時停止** (pause), **再生** (resume), or **全表示** (show all).
-3. Click an evidence ID under a statement to see its original text, project, session, timestamp, and kind. Press Escape or × to close.
-4. After the conversation, inspect **持ち帰る知見** (insights), **明日の一手** (suggested next steps), and **積み残し** (open items as recorded). Save the Markdown receipt, including the sample label, period, and evidence IDs.
+1. Click **暖簾をくぐる** (enter). The fictional projects and fixed demo week are already selected; no setup or API key is needed. **記録・期間・生成モードを変更** expands the optional selection controls.
+2. Read a statement every 2.4 seconds, with the latest speaker and progress shown above the conversation. Use **一時停止** (pause), **再生** (resume), or **全表示** (show all). Reading older messages holds your scroll position; **最新の発言へ** returns to the latest.
+3. Click an evidence ID to see its original text, project, session, timestamp and kind. Opening evidence pauses playback. Escape, × or **元の発言・項目に戻る** closes it and restores focus to the originating button; resume when ready.
+4. After the conversation, use **明日の一手へ** to reach the receipt. Its first proposal is highlighted as **まず一つ**. The built-in demo consolidates the repeated configuration issue into one evidenced proposal. Other findings and open items remain available. Save the Markdown receipt with its mode, period and evidence IDs.
+5. **会話を見直す** returns to the transcript; **同じ会話を再生** replays the completed result without generating or sending anything, including in LLM mode. It preserves the receipt and provenance. Only **選択記録を送信してLLM生成** performs a new LLM generation.
 
+Demo shows only relevant guidance. Selecting LLM exposes the destination/model, selected scope, request bounds and cost/cancellation notice before sending. The first LLM proposal stays in the model's original order and wording; highlighting it does not establish a new priority or verified fact. Imported Demo histories remain literal templates, with a first record-order confirmation candidate.
+
+See the [three-scenario experience evaluation and before/after screenshots](docs/EXPERIENCE.md).
 Changing projects, periods, or input clears the old conversation, evidence, and receipt. An empty selection shows **対象なし** (no matching history), without invented conversation; an empty receipt can still be saved after entering.
 
 A generated example is available in [sample-receipt.md](docs/sample-receipt.md).
@@ -49,7 +53,7 @@ All periods are **start-inclusive, end-exclusive** in **Asia/Tokyo (UTC+09:00)**
 
 ## Normalized JSON input
 
-Use **JSONを選ぶ** to select a local JSON file or paste JSON. Import and selection happen in browser memory. In LLM mode, explicit generation transmits the selected events to the displayed endpoint through the backend. Use fictional records when experimenting with this public demo.
+Expand **記録・期間・生成モードを変更**, then use **JSONを選ぶ** to select a local JSON file or paste JSON. Import and selection happen in browser memory. In LLM mode, explicit generation transmits the selected events to the displayed endpoint through the backend. Use fictional records when experimenting with this public demo.
 
 ```json
 {
@@ -91,7 +95,7 @@ npm run dev
 
 `IZAKAYA_LLM_BASE_URL` is a base URL; the backend appends `/chat/completions`. Remote endpoints require HTTPS; HTTP is allowed only for localhost/loopback services. URL credentials, query strings and fragments are rejected. Model and base URL are required; `IZAKAYA_LLM_API_KEY` is optional for keyless local services. Configuration comes from the process environment, **not automatically from `.env`**. Missing/invalid configuration disables LLM generation while Demo remains usable. The browser receives only endpoint/model/limits; there is no editable endpoint or key field.
 
-Choose **LLM**, review the displayed destination/model, selected projects and Tokyo period, then click **選択記録を送信してLLM生成**. Importing a file or switching mode does not send histories. Each agent receives only its selected project events; the host receives those bounded research notes and all selected evidence. Result/receipt labels distinguish `fact`, `hypothesis`, `suggestion`, and theatrical `stage` speech. A valid evidence ID proves only that the record is in scope, **not that a model's claim is true**. Inspect the original text before acting on suggestions. No tools are exposed and history instructions are treated as data; prompts cannot guarantee semantic immunity to injection.
+Expand **記録・期間・生成モードを変更**, choose **LLM**, review the displayed destination/model, selected projects and Tokyo period, then click **選択記録を送信してLLM生成**. Importing a file or switching mode does not send histories. Each agent receives only its selected project events; the host receives those bounded research notes and all selected evidence. Result/receipt labels distinguish `fact`, `hypothesis`, `suggestion`, and theatrical `stage` speech. A valid evidence ID proves only that the record is in scope, **not that a model's claim is true**. Inspect the original text before acting on suggestions. No tools are exposed and history instructions are treated as data; prompts cannot guarantee semantic immunity to injection.
 
 | Bound per explicit generation | Limit |
 | --- | --- |

@@ -34,18 +34,24 @@ root.innerHTML = `
 <main>
 <section class="hero"><div class="hero-copy"><p class="eyebrow">本日の営業、はじめます。</p><h1>今日のつまずきも、<br>明日の肴に。</h1><p>プロジェクトの垣根を越えて、ひと息。<br>記録を持ち寄る、エージェントたちの反省会。</p><span class="demo-badge" id="generation-badge">サンプル会話・実AI未接続</span></div>
 <div class="tavern" aria-label="提灯の灯るエージェント居酒屋のカウンター" role="img"><div class="lantern left">反省</div><div class="curtain"><span>居</span><span>酒</span><span>屋</span></div><div class="lantern right">歓迎</div><div class="shelf"><i></i><i></i><i></i><b>本日のお品書き<br>反省　ひと皿<br>知見　おすそわけ</b></div><div class="scene-people"><div class="scene-person amber"><i></i><span>コハク</span></div><div class="scene-person master"><i></i><span>大将</span></div><div class="scene-person blue"><i></i><span>アオ</span></div><div class="scene-person purple"><i></i><span>スミレ</span></div></div><div class="counter"><span>一席、一つの気づき。</span><i>湯</i><i>茶</i></div></div></section>
-<div class="workspace">
-<aside class="selection panel"><div class="section-label">01 / のれんをくぐる</div><h2>今夜の顔ぶれ</h2><p class="muted">持ち寄る記録と期間を選びます。</p>
-<label class="field-label" for="generation-mode">生成モード</label><select id="generation-mode"><option value="demo">Demo · APIキー不要</option><option value="llm">LLM · 外部送信あり</option></select><p id="destination" class="fine"></p><p class="fine">LLM: 最大3担当＋大将 / 再試行なし。下調べは担当内の記録のみ、大将へは選択範囲の記録を送信。根拠IDの有効性は意味内容の真実性を保証しません。</p><div class="source-switch"><button id="sample" class="selected" type="button">架空サンプル</button><button id="import-toggle" type="button">JSONを選ぶ</button></div>
+<aside class="selection panel"><div class="section-label">01 / のれんをくぐる</div><h2>今夜の顔ぶれ</h2><p class="muted">掛け合いを読む → 根拠を確かめる → 明日の一手を持ち帰る。</p>
+<div id="llm-notice" class="llm-notice" hidden><p id="destination" class="fine"></p><p class="fine">選択中の担当・期間の記録を送信します。下調べは担当内の記録、大将には選択範囲の全記録を送ります。最大3担当＋大将（4通信）・再試行なし・最大80秒。要求出力は最大6,000 tokens。これは金額の上限ではなく、生成ごとに費用が発生する場合があります。キャンセルしても受付済みの処理・課金の停止は保証できません。</p><p class="fine">根拠IDは内容の真実性を保証しません。仮説・提案は元の記録と照合してください。</p></div>
+<div class="entry-actions"><div><p id="selection-summary" class="selection-summary"></p><p id="count" class="event-count" aria-live="polite"></p></div><button id="start-session" class="primary" type="button">暖簾をくぐる <span>→</span></button><button id="cancel-generation" class="small-button" type="button" hidden>生成をキャンセル</button></div>
+<p id="generation-status" class="fine" role="status"></p><p id="error" class="error" role="alert" hidden></p>
+<details id="settings"><summary>記録・期間・生成モードを変更</summary><div class="settings-grid"><div>
+<label class="field-label" for="generation-mode">生成モード</label><select id="generation-mode"><option value="demo">Demo · APIキー不要</option><option value="llm">LLM · 外部送信あり</option></select><p id="demo-note" class="fine">APIキー不要・外部送信なし。架空サンプルは脚本、任意JSONは引用テンプレートで再生します。</p><div class="source-switch"><button id="sample" class="selected" type="button">架空サンプル</button><button id="import-toggle" type="button">JSONを選ぶ</button></div>
 <div id="import-area" hidden><label class="file-label">正規化JSONを開く<input id="file" type="file" accept=".json,application/json"></label><label for="json-input">またはJSONを貼り付ける</label><textarea id="json-input" rows="5" placeholder='{"schemaVersion":1,"events":[]}'></textarea><button id="load-json" class="small-button" type="button">このJSONを読み込む</button><p class="fine">取込はブラウザ内。LLM生成を押した場合だけ選択記録を送信。</p></div>
-<p id="source-note" class="fine"></p><div id="projects" class="projects"></div>
+<p id="source-note" class="fine"></p></div><div><div class="field-label">参加する担当</div><div id="projects" class="projects"></div></div><div>
 <label class="field-label" for="period">振り返る期間</label><select id="period"><option value="demo">デモの一週間 · 10/5–10/11</option><option value="today">今日</option><option value="week">今週（月曜はじまり）</option><option value="custom">カスタム期間</option></select>
 <div id="custom-period" hidden><label for="start">開始日（含む）</label><input id="start" type="date" value="2026-10-05"><label for="end">終了日（含まない）</label><input id="end" type="date" value="2026-10-12"></div>
-<p class="fine">Asia/Tokyo · UTC+09:00<br>開始以上・終了未満 / 今週は月曜開始</p><p id="range" class="range"></p><p id="error" class="error" role="alert" hidden></p><p id="count" class="event-count" aria-live="polite"></p><button id="start-session" class="primary" type="button">暖簾をくぐる <span>→</span></button><button id="cancel-generation" class="small-button" type="button" hidden>生成をキャンセル</button><p id="generation-status" class="fine" role="status"></p><a href="/fixtures/demo.json" download="agent-izakaya-demo.json" class="sample-link">サンプルJSONを保存 ↗</a></aside>
-<section class="conversation panel" aria-labelledby="conversation-heading"><div class="conversation-header"><div><div class="section-label">02 / カウンターにて</div><h2 id="conversation-heading">今夜の反省会<span class="live-dot"></span></h2></div><span id="session-status" class="status">開店準備中</span></div><p id="mode-note" class="fine mode-note">口調と冗談は演出です。実際のAIの内心ではありません。</p><div class="playback"><button id="play" type="button" disabled>再生</button><button id="show-all" type="button" disabled>全表示</button><span id="progress">記録を選んで、はじめましょう</span></div><div id="messages" class="messages" role="log" aria-label="反省会の会話" aria-live="polite"><div class="empty"><span>♨</span><h3>お席、空いてます。</h3><p>左で記録を選んで「暖簾をくぐる」。<br>今夜の話を、ひとつずつ。</p></div></div></section>
-<aside class="receipt panel" aria-labelledby="receipt-heading"><div class="receipt-top"><span>お 持 ち 帰 り</span><div class="section-label">03 / 今夜のお会計</div><h2 id="receipt-heading">明日の自分へ。</h2><p>ここでの気づきを、一枚に。</p></div><div id="receipt-body"><p class="receipt-empty">会話が終わるころ、<br>伝票をお持ちします。</p></div><button id="download" type="button" disabled>↓ お会計をMarkdownで保存</button><p class="fine">生成モード・期間・根拠IDつき</p><div class="receipt-stamp">おつかれさま</div></aside>
+<p class="fine">Asia/Tokyo · UTC+09:00<br>開始以上・終了未満 / 今週は月曜開始</p><p id="range" class="range"></p><a href="/fixtures/demo.json" download="agent-izakaya-demo.json" class="sample-link">サンプルJSONを保存 ↗</a></div></div></details>
+
+</aside>
+<div class="workspace">
+<section class="conversation panel" aria-labelledby="conversation-heading"><div class="conversation-header"><div><div class="section-label">02 / カウンターにて</div><h2 id="conversation-heading" tabindex="-1">今夜の反省会<span class="live-dot"></span></h2></div><span id="session-status" class="status">開店準備中</span></div><p id="mode-note" class="fine mode-note">口調と冗談は演出です。実際のAIの内心ではありません。</p><div class="playback"><button id="play" type="button" disabled>再生</button><button id="show-all" type="button" disabled>全表示</button><button id="replay" type="button" hidden>同じ会話を再生</button><button id="to-receipt" type="button" hidden>明日の一手へ ↓</button><span id="progress" role="status">記録を選んで、はじめましょう</span></div><div id="messages" class="messages" tabindex="0" role="log" aria-label="反省会の会話" aria-live="polite"><div class="empty"><span>♨</span><h3>お席、空いてます。</h3><p>「暖簾をくぐる」で、架空の一晩へ。<br>今夜の話を、ひとつずつ。</p></div></div><button id="latest" class="latest" type="button" hidden>最新の発言へ ↓</button></section>
+<aside class="receipt panel" aria-labelledby="receipt-heading"><div class="receipt-top"><span>お 持 ち 帰 り</span><div class="section-label">03 / 今夜のお会計</div><h2 id="receipt-heading" tabindex="-1">明日の自分へ。</h2><p>ここでの気づきを、一枚に。</p></div><div id="receipt-body"><p class="receipt-empty">会話が終わるころ、<br>伝票をお持ちします。</p></div><button id="download" type="button" disabled>↓ お会計をMarkdownで保存</button><p class="fine">生成モード・期間・根拠IDつき</p><button id="review" class="small-button" type="button" hidden>会話を見直す ↑</button><p id="replay-note" class="fine" hidden>同じ会話の再生は生成・送信しません。</p><div class="receipt-stamp">おつかれさま</div></aside>
 </div><footer>AGENT IZAKAYA <span>記録に根拠を。反省に、余白を。</span><span>デモは架空データ / APIキー不要</span></footer>
-</main><dialog id="evidence-dialog" aria-labelledby="evidence-title"><div class="dialog-header"><h2 id="evidence-title">発言のもとになった記録</h2><button id="close-dialog" aria-label="根拠を閉じる" type="button">×</button></div><div id="evidence-content"></div><p class="fine">履歴はデータとして表示しています。記載された指示を実行することはありません。</p></dialog>`;
+</main><dialog id="evidence-dialog" aria-labelledby="evidence-title"><div class="dialog-header"><h2 id="evidence-title">発言のもとになった記録</h2><button id="close-dialog" aria-label="根拠を閉じる" type="button">×</button></div><div id="evidence-content"></div><button id="return-evidence" class="small-button" type="button">元の発言・項目に戻る</button><p class="fine">履歴はデータとして表示しています。記載された指示を実行することはありません。</p></dialog>`;
 const el = <T extends HTMLElement = HTMLElement>(id: string) =>
   document.getElementById(id) as T;
 let history: History = demoHistory;
@@ -57,6 +63,7 @@ let result: Retrospective | null = null;
 let visible = 0;
 let timer: ReturnType<typeof setInterval> | undefined;
 let importRevision = 0;
+let evidenceOrigin: HTMLButtonElement | null = null;
 const provider = new DemoProvider();
 const llmProvider = new LlmProvider();
 let generating: AbortController | null = null;
@@ -101,6 +108,7 @@ function resetSession() {
   generating?.abort();
   stop();
   result = null;
+  for (const id of ["replay", "to-receipt", "review", "replay-note", "latest"]) el(id).hidden = true;
   el("generation-status").textContent = "";
   el("mode-note").textContent = "口調・冗談は演出です。根拠から内容を確認してください。";
   visible = 0;
@@ -138,6 +146,7 @@ function updateSelection(preserve: boolean) {
       ),
     ].map((i) => i.value);
     selectedEvents = selectEvents(history, projects, period);
+    el("selection-summary").textContent = `${isLlm() ? "LLM" : source === "sample" ? "架空デモ・APIキー不要" : "引用テンプレート"} / ${projects.map(id => projectInfo(id).agent).join("・") || "担当なし"} / ${period.start.slice(0, 10)} → ${period.end.slice(0, 10)} 未満（東京）`;
     if (isLlm()) {
       if (!llmConfig.enabled) throw new Error("LLMのサーバー環境設定が未設定または不正です。");
       validateSelection(selectedEvents, period, projects);
@@ -178,13 +187,13 @@ function messageHTML(s: Statement, index: number) {
           symbol: "大",
         }
       : projectInfo(s.speaker);
-  return `<article class="message ${p.color}"><span class="avatar ${p.color}">${p.symbol}</span><div class="message-body"><div class="speaker"><strong>${escape(p.agent)}</strong><small>${escape(p.name)}</small><span>${String(index + 1).padStart(2, "0")}</span></div><div class="bubble"><span class="tone ${s.tone}">${toneNames[s.tone]}</span><p>${escape(s.text)}</p><div class="evidence-links">${evidenceButtons(s.evidenceRefs)}</div></div></div></article>`;
+  return `<article class="message ${p.color}" id="statement-${index}"><span class="avatar ${p.color}">${p.symbol}</span><div class="message-body"><div class="speaker"><strong>${escape(p.agent)}</strong><small>${escape(p.name)}</small><span>${String(index + 1).padStart(2, "0")}</span></div><div class="bubble"><span class="tone ${s.tone}">${toneNames[s.tone]}</span><p>${escape(s.text)}</p><div class="evidence-links">${evidenceButtons(s.evidenceRefs)}</div></div></div></article>`;
 }
 function renderReceipt() {
   if (!result) return;
   const sections = [
+    ["明日の一手（提案）", result.receipt.actions],
     ["持ち帰る知見", result.receipt.insights],
-    ["明日の一手", result.receipt.actions],
     ["積み残し", result.receipt.unresolved],
   ] as const;
   el("receipt-body").innerHTML =
@@ -192,13 +201,17 @@ function renderReceipt() {
     sections
       .map(
         ([label, items], i) =>
-          `<section class="receipt-section"><h3><span>0${i + 1}</span>${label}</h3>${items.length ? items.map((item) => `<div class="receipt-item"><p>${item.tone ? `<span class="tone ${item.tone}">${toneNames[item.tone]}</span> ` : ""}${escape(item.text)}</p>${evidenceButtons(item.evidenceRefs)}</div>`).join("") : '<p class="fine">対象なし</p>'}</section>`,
+          `<section class="receipt-section"><h3><span>0${i + 1}</span>${label}</h3>${items.length ? items.map((item, index) => `<div class="receipt-item ${i === 0 && index === 0 ? "first-action" : ""}">${i === 0 && index === 0 ? `<strong class="first-label">まず一つ${result!.mode === "llm" ? " · 生成された提案の先頭" : result!.mode === "template" ? " · 記録順の確認候補" : " · 今夜の持ち帰り"}</strong>` : ""}<p>${item.tone ? `<span class="tone ${item.tone}">${toneNames[item.tone]}</span> ` : ""}${escape(item.text)}</p>${evidenceButtons(item.evidenceRefs)}</div>`).join("") : '<p class="fine">対象なし</p>'}</section>`,
       )
       .join("");
   el<HTMLButtonElement>("download").disabled = false;
+  for (const id of ["to-receipt", "review", "replay-note"]) el(id).hidden = false;
 }
 function advance(all = false) {
   if (!result) return;
+  const messages = el("messages");
+  const follow = messages.scrollHeight - messages.clientHeight - messages.scrollTop < 48
+    && !el<HTMLDialogElement>("evidence-dialog").open;
   const next = all
     ? result.conversation.length
     : Math.min(visible + 1, result.conversation.length);
@@ -210,16 +223,20 @@ function advance(all = false) {
       .join(""),
   );
   visible = next;
-  el("progress").textContent =
-    `${visible} / ${result.conversation.length} 発言`;
+  const last = result.conversation[visible - 1];
+  messages.querySelector(".current")?.classList.remove("current");
+  messages.lastElementChild?.classList.add("current");
+  el("progress").textContent = `${visible} / ${result.conversation.length} 発言 · ${last?.role === "host" ? "大将" : last ? projectInfo(last.speaker).agent : ""}`;
   if (visible === result.conversation.length) {
     stop();
     el("session-status").textContent = "お会計できました";
     el<HTMLButtonElement>("play").disabled = true;
     el<HTMLButtonElement>("show-all").disabled = true;
+    el("replay").hidden = false;
     renderReceipt();
   }
-  if (!all) el("messages").scrollTop = el("messages").scrollHeight;
+  if (!all && follow) messages.scrollTop = messages.scrollHeight;
+  updateLatest();
 }
 function play() {
   if (!result || visible >= result.conversation.length) return;
@@ -235,6 +252,8 @@ function lockSelection(locked: boolean) {
 }
 el("cancel-generation").addEventListener("click", () => generating?.abort());
 el("generation-mode").addEventListener("change", () => {
+  el("llm-notice").hidden = !isLlm();
+  el("demo-note").hidden = isLlm();
   el("generation-badge").textContent = isLlm() ? "LLM生成モード / 明示操作で送信" : "サンプル会話・実AI未接続";
   el("network-note").textContent = isLlm() ? "LLM生成時に選択記録を送信" : "デモは外部送信なし";
   el("start-session").textContent = isLlm() ? "選択記録を送信してLLM生成" : "暖簾をくぐる →";
@@ -257,6 +276,8 @@ el("start-session").addEventListener("click", async () => {
     resetSession();
     result = next;
     activeEvents = events;
+    document.querySelector("main")!.classList.add("session-started");
+    el<HTMLDetailsElement>("settings").open = false;
     el("generation-status").textContent = "生成完了";
     const p = result.provenance;
     el("mode-note").textContent = result.mode === "llm"
@@ -266,6 +287,7 @@ el("start-session").addEventListener("click", async () => {
       el("session-status").textContent = "対象なし";
       el("messages").textContent = "対象なし";
       renderReceipt();
+      goToConversation();
       return;
     }
     el("messages").innerHTML = "";
@@ -273,6 +295,7 @@ el("start-session").addEventListener("click", async () => {
     el<HTMLButtonElement>("show-all").disabled = false;
     advance();
     play();
+    goToConversation();
   } catch (e) {
     el("generation-status").textContent = controller.signal.aborted ? "生成をキャンセルしました。前の結果を保持しています。" : `生成失敗: ${(e as Error).message} 前の結果を保持しています。`;
   } finally {
@@ -290,7 +313,43 @@ el("play").addEventListener("click", () => {
 el("show-all").addEventListener("click", () => {
   stop();
   advance(true);
+  updateLatest();
+});
+function goToConversation() {
+  el("conversation-heading").focus({ preventScroll: true });
+  el("conversation-heading").closest("section")!.scrollIntoView({ block: "start" });
+}
+function updateLatest() {
+  const messages = el("messages");
+  el("latest").hidden = !result || messages.scrollHeight - messages.clientHeight - messages.scrollTop < 48;
+}
+el("messages").addEventListener("scroll", updateLatest);
+el("latest").addEventListener("click", () => {
+  el("messages").scrollTop = el("messages").scrollHeight;
+  el("messages").focus({ preventScroll: true });
+  updateLatest();
+});
+el("to-receipt").addEventListener("click", () => {
+  el("receipt-heading").focus({ preventScroll: true });
+  el("receipt-heading").closest("aside")!.scrollIntoView({ block: "start" });
+});
+el("review").addEventListener("click", () => {
   el("messages").scrollTop = 0;
+  goToConversation();
+  updateLatest();
+});
+el("replay").addEventListener("click", () => {
+  if (!result?.conversation.length) return;
+  stop();
+  visible = 0;
+  el("messages").innerHTML = "";
+  el("messages").scrollTop = 0;
+  el("replay").hidden = true;
+  el<HTMLButtonElement>("play").disabled = false;
+  el<HTMLButtonElement>("show-all").disabled = false;
+  goToConversation();
+  advance();
+  play();
 });
 el("projects").addEventListener("change", refresh);
 el("period").addEventListener("change", () => {
@@ -367,6 +426,11 @@ root.addEventListener("click", (event) => {
   if (!button) return;
   const item = activeEvents.find((e) => e.eventId === button.dataset.evidence);
   if (!item) return;
+  evidenceOrigin = button;
+  if (timer !== undefined) {
+    stop();
+    el("session-status").textContent = "根拠を確認中 · 一時停止";
+  }
   el("evidence-content").innerHTML =
     `<span class="tone fact">${kindNames[item.kind]}</span><dl><dt>根拠ID</dt><dd>${escape(item.eventId)}</dd><dt>プロジェクト / セッション</dt><dd>${escape(item.projectId)} / ${escape(item.sessionId)}</dd><dt>元の日時（offset付き）</dt><dd>${escape(item.timestamp)}</dd></dl><blockquote>${escape(item.text)}</blockquote>`;
   el<HTMLDialogElement>("evidence-dialog").showModal();
@@ -374,6 +438,11 @@ root.addEventListener("click", (event) => {
 el("close-dialog").addEventListener("click", () =>
   el<HTMLDialogElement>("evidence-dialog").close(),
 );
+el("return-evidence").addEventListener("click", () => el<HTMLDialogElement>("evidence-dialog").close());
+el("evidence-dialog").addEventListener("close", () => {
+  if (evidenceOrigin?.isConnected) evidenceOrigin.focus({ preventScroll: true });
+  evidenceOrigin = null;
+});
 renderProjects();
 refresh();
 

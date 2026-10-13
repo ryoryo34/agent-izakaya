@@ -66,3 +66,21 @@ Implementation uses built-in Node HTTP/fetch without adding dependencies. On 202
 - Chrome desktop/mobile viewport only; other browser engines, physical devices and Node 22.18 minimum were not exercised.
 - Node backend exists in both Vite dev and preview. Static hosting of `dist/` alone cannot perform LLM generation. No deployment was done.
 - Demo remains deterministic and keyless. Existing Issue #1 limits above describe that earlier milestone; Issue #3 now adds the optional HTTP path and explicit selected-history transmission.
+
+# Issue #5 verification / 検証記録
+
+2026-10-14 JST。Scope: [Issue #5](https://github.com/ryoryo34/agent-izakaya/issues/5)。親PR #4の `87e096bd88b206202c3b41e5adf2ef5db1e26ce2` から `issue-5-experience-polish` を作成。開始時clean。架空fixtureのみ使用し、実モデル・課金・秘密/実履歴探索・ユーザー設定変更・デプロイ・マージなし。依存追加なし。
+
+| 確認 | 結果 |
+| --- | --- |
+| `npm test` | 22 passed。既存21件＋Demo提案統合・範囲・任意入力の非統合 |
+| `npm run typecheck` | Passed |
+| `npm run build` | Passed |
+| `PLAYWRIGHT_CHROME=1 npm run test:e2e` | 13 passed。既存8件＋3viewport操作・読み返し保持/根拠停止・LLM再生の追加通信ゼロ |
+| `PLAYWRIGHT_CHROME=1 npm run test:preview` | Passed。HTTPスタブ生成・根拠/保存・実ソケットキャンセル・前結果保持・キー非露出・JSエラー0 |
+| 実画面 | Codex内蔵ブラウザ、1280×800 / 850×850 / 390×844。入店→会話→根拠→復帰→伝票、手動3シナリオを確認 |
+| アクセシビリティ関連 | Chrome E2E: Enterで入店、Escape/戻るで元ボタンへfocus、会話/伝票の見出しfocus、reduced motionでanimationなし、3サイズで横溢れなし |
+| 再生と生成の分離 | LLM完成後にDemoへ切り替えて同じ会話を再生しても、生成APIは初回の1回のみ。会話・伝票・LLM生成情報は同一 |
+| 回帰 | 空入力、無効JSON、任意JSON、期間/担当変更、LLM成功/失敗/キャンセル、選択範囲、Markdown provenanceを保持 |
+
+評価表、改善前後の画像、再現手順、未確認事項は [EXPERIENCE.md](EXPERIENCE.md)。内蔵ブラウザの保存完了イベントはtimeoutしたため、その環境の保存完了は未確認。Chromeでは伝票内容まで確認済み。実LLMの品質は未評価。実装の基盤・通信経路は親Issueのまま。

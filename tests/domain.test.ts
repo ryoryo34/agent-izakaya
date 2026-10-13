@@ -252,3 +252,23 @@ test("a project named master stays an agent, separate from the host", async () =
   assert.equal(result.conversation[1].role, "agent");
   assert.equal(result.conversation[1].speaker, "master");
 });
+
+
+test("curated sample actions consolidate one problem, retain scoped evidence and never group imports", async () => {
+  const result = await provider.generate(selected, period, "sample");
+  assert.equal(result.receipt.actions.length, 2);
+  assert.deepEqual(new Set(result.receipt.actions[0].evidenceRefs), new Set(["k-config-1", "k-config-2", "m-improve"]));
+  assert.deepEqual(result.receipt.actions[1].evidenceRefs, ["t-open"]);
+  assert.match(toMarkdown(result, selected), /まず一つ/);
+  for (const ids of [["k-config-1"], ["k-config-2"], ["k-config-1", "k-config-2"], ["k-config-2", "m-improve"]]) {
+    const events = selected.filter(e => ids.includes(e.eventId));
+    const scoped = await provider.generate(events, period, "sample");
+    assert.equal(scoped.receipt.actions.length, 1);
+    validateEvidence(scoped, events);
+    assert.deepEqual(new Set(scoped.receipt.actions[0].evidenceRefs), new Set(ids));
+  }
+  const imported = await provider.generate(selected, period, "import");
+  assert.equal(imported.receipt.actions.length, 3);
+  assert.ok(imported.receipt.actions.every(a => a.evidenceRefs.length === 1));
+  assert.doesNotMatch(JSON.stringify(imported.receipt.actions), /適用できるか/);
+});
