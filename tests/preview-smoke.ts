@@ -1,3 +1,7 @@
+async function openSettings(page: import("@playwright/test").Page) {
+  if (!(await page.locator("#settings").evaluate(e => (e as HTMLDetailsElement).open)))
+    await page.locator("#settings summary").click();
+}
 import assert from 'node:assert/strict';
 import { readFile, readdir } from 'node:fs/promises';
 import { chromium } from '@playwright/test';
@@ -18,7 +22,8 @@ try {
   const errors: string[] = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.goto('http://127.0.0.1:4315/');
-  await page.locator('#destination').filter({ hasText: 'fictional-preview-stub' }).waitFor();
+  await page.locator('#destination').filter({ hasText: 'fictional-preview-stub' }).waitFor({ state: 'attached' });
+  await openSettings(page);
   await page.locator('#generation-mode').selectOption('llm');
   await page.locator('#start-session').click();
   await page.locator('#generation-status').filter({ hasText: '生成完了' }).waitFor();

@@ -133,7 +133,8 @@ export class DemoProvider implements RetrospectiveProvider {
           text: event.text,
           evidenceRefs: [event.eventId],
         });
-        result.receipt.actions.push({
+        // Only the exact built-in fixture has curated actions. Imported history stays literal.
+        if (mode !== "sample" || !["k-config-1", "k-config-2", "t-open"].includes(event.eventId)) result.receipt.actions.push({
           text: `提案：${event.projectId} の記録 ${event.eventId} について、再現条件と次の確認方法を整理する。`,
           evidenceRefs: [event.eventId],
         });
@@ -163,14 +164,26 @@ export class DemoProvider implements RetrospectiveProvider {
         "suggestion",
         ["k-config-2", "m-improve"],
       );
-      result.receipt.actions.unshift({
-        text: "提案：こもれびの呼び出し元を確認し、みなとの設定取得集約と重複防止テストを適用できるか検討する。",
-        evidenceRefs: ["k-config-2", "m-improve"],
+    }
+    if (mode === "sample") {
+      const configRefs = ["k-config-1", "k-config-2"].filter(id => has(id));
+      if (configRefs.length) {
+        const crossProject = has("k-config-2", "m-improve");
+        result.receipt.actions.unshift({
+          text: crossProject
+            ? "提案：こもれびの呼び出し元を確認し、みなとの設定取得集約と重複防止テストを適用できるか検討する。"
+            : "提案：こもれびの設定読み込みの呼び出し元を確認し、重複が起きる条件を整理する。",
+          evidenceRefs: crossProject ? ["k-config-2", "m-improve", ...configRefs.filter(id => id !== "k-config-2")] : configRefs,
+        });
+      }
+      if (has("t-open")) result.receipt.actions.push({
+        text: "提案：つばめの検索条件を素早く切り替える手順を再現し、不安定になる条件を記録する。",
+        evidenceRefs: ["t-open"],
       });
     }
     say(
       "master",
-      "そろそろ、お会計。持ち帰るものは右の伝票へ。解決したとは決めつけず、明日の一手を一つずつ。おつかれさま。",
+      "そろそろ、お会計。持ち帰るものは「明日の一手へ」から伝票へ。解決したとは決めつけず、明日の一手を一つずつ。おつかれさま。",
       "stage",
     );
     validateEvidence(result, events);
@@ -237,8 +250,8 @@ export function toMarkdown(
     lines.push(
       ...(items.length
         ? items.map(
-            (i) =>
-              `- ${i.tone ? `[${i.tone}] ` : ""}${markdownText(i.text)} — 根拠: ${i.evidenceRefs.join(", ")}`,
+            (i, index) =>
+              `- ${title.startsWith("明日の一手") && index === 0 ? "【まず一つ・提案の先頭】 " : ""}${i.tone ? `[${i.tone}] ` : ""}${markdownText(i.text)} — 根拠: ${i.evidenceRefs.join(", ")}`,
           )
         : ["対象なし"]),
     );

@@ -1,3 +1,7 @@
+async function openSettings(page: import("@playwright/test").Page) {
+  if (!(await page.locator("#settings").evaluate(e => (e as HTMLDetailsElement).open)))
+    await page.locator("#settings summary").click();
+}
 import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 async function startAll(page: import("@playwright/test").Page) {
@@ -45,6 +49,7 @@ test("selection → playback/pause → evidence → receipt download → invalid
   expect(md).toContain("サンプル会話・実AI未接続");
   expect(md).toContain("k-config-2, m-improve");
   expect(md).not.toContain("t-after");
+  await openSettings(page);
   await page.locator('input[value="minato"]').uncheck();
   await expect(page.locator("#download")).toBeDisabled();
   await expect(page.locator(".message")).toHaveCount(0);
@@ -58,22 +63,29 @@ test("custom boundaries, empty selection, malformed input, unknown history and s
   page,
 }) => {
   await page.goto("/");
+  await openSettings(page);
   await page.locator("#period").selectOption("custom");
+  await openSettings(page);
   await page.locator("#start").fill("2026-10-10");
+  await openSettings(page);
   await page.locator("#end").fill("2026-10-11");
   await expect(page.locator("#count")).toContainText("2 件");
   await startAll(page);
   await expect(page.locator("#messages")).not.toContainText("二度読み");
+  await openSettings(page);
   await page.locator("#end").fill("2026-10-10");
   await expect(page.getByRole("alert")).toContainText("開始日");
   await expect(page.locator("#start-session")).toBeDisabled();
+  await openSettings(page);
   await page.getByRole("button", { name: "架空サンプル", exact: true }).click();
+  await openSettings(page);
   for (const checkbox of await page.locator('input[name="project"]').all())
     await checkbox.uncheck();
   await expect(page.locator("#messages")).toContainText("対象なし");
   await page.locator("#start-session").click();
   await expect(page.locator(".message")).toHaveCount(0);
   await expect(page.locator("#receipt-body")).toContainText("対象なし");
+  await openSettings(page);
   await page.getByRole("button", { name: "JSONを選ぶ", exact: true }).click();
   await page.locator("#json-input").fill("{ broken");
   await page.locator("#load-json").click();
@@ -111,10 +123,13 @@ test("file import, today/week selection, oversized and empty files", async ({
 }) => {
   await page.clock.install({ time: new Date("2026-10-10T18:00:00+09:00") });
   await page.goto("/");
+  await openSettings(page);
   await page.locator("#period").selectOption("today");
   await expect(page.locator("#count")).toContainText("2 件");
+  await openSettings(page);
   await page.locator("#period").selectOption("week");
   await expect(page.locator("#count")).toContainText("7 件");
+  await openSettings(page);
   await page.getByRole("button", { name: "JSONを選ぶ", exact: true }).click();
   await page
     .locator("#file")
